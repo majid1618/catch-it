@@ -1,0 +1,46 @@
+# Catch It iOS — modelled on Top of Board's ios-release workflow.
+# Automatic App Store signing for the app and Share Extension via the
+# existing "Top of Board Apple" integration. Upload only; do not submit.
+workflows:
+  ios-release:
+    name: Catch It iOS
+    integrations:
+      app_store_connect: Top of Board Apple
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        # Codemagic also matches extension profiles under this prefix
+        # (com.ramlisoft.catchit.ShareExtension).
+        distribution_type: app_store
+        bundle_identifier: com.ramlisoft.catchit
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles -v --code-signing-setup-verbose-logging
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Install pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+        ignore_failure: true
+      - name: Flutter build IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Upload only: do not submit for beta or App Store review.
+        submit_to_testflight: false
+        submit_to_app_store: false
