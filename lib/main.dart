@@ -4,10 +4,19 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 
-void main() => runApp(const CatchItApp());
+import 'onboarding_video.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final showOnboarding = await shouldShowOnboarding();
+  runApp(CatchItApp(showOnboarding: showOnboarding));
+}
 
 class CatchItApp extends StatelessWidget {
-  const CatchItApp({super.key});
+  const CatchItApp({super.key, this.showOnboarding = false});
+
+  /// True only on the first launch after install.
+  final bool showOnboarding;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +27,9 @@ class CatchItApp extends StatelessWidget {
         colorSchemeSeed: Colors.blue,
         brightness: Brightness.light,
       ),
-      home: const CatchItHome(),
+      home: showOnboarding
+          ? const FirstLaunchGate(home: CatchItHome())
+          : const CatchItHome(),
     );
   }
 }
@@ -192,6 +203,13 @@ class _CatchItHomeState extends State<CatchItHome> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('watch_tutorial'),
+                onPressed: () => showTutorialVideo(context),
+                icon: const Icon(Icons.play_circle_outline),
+                label: const Text("Watch tutorial"),
               ),
             ],
           ),
